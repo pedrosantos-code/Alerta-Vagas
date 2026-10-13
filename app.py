@@ -1,160 +1,139 @@
-from datetime import datetime
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-# Configuração inicial da página
+# Configuração da página
 st.set_page_config(
     page_title="Alerta de Vagas & Analytics", page_icon="💼", layout="wide"
 )
 
-st.title("💼 Alerta de Vagas & Painel de Oportunidades (Glassdoor Data)")
-st.markdown(
-    "Filtra, analisa e monitoriza as melhores vagas de Ciência de Dados sem ruído e sem spam de notificações."
-)
+st.title("💼 Alerta de Vagas & Analytics")
+st.markdown("Filtra e monitoriza as melhores oportunidades sem ruído visual.")
 
 
-# --- CARREGAR DADOS REAIS DO KAGGLE ---
+# --- CARREGAR DADOS ---
 @st.cache_data
 def carregar_vagas():
-  # Lê o arquivo CSV localizado na pasta data/
-  df = pd.read_csv("data/Cleaned_DS_Jobs.csv")
-  return df
+  return pd.read_csv("data/Cleaned_DS_Jobs.csv")
 
 
 try:
   df_vagas = carregar_vagas()
 except Exception as e:
-  st.error(
-      f"Erro ao carregar o arquivo CSV. Verifique se o caminho 'data/Cleaned_DS_Jobs.csv' está correto. Detalhe: {e}"
-  )
+  st.error(f"Erro ao carregar o ficheiro de dados: {e}")
   st.stop()
 
-# --- BARRA LATERAL (FILTROS DE BUSCA) ---
-st.sidebar.header("⚙️ Configurar Filtros de Vagas")
 
-# Busca por texto genérico (no título ou descrição, dependendo das colunas)
-# Geralmente colunas comuns em datasets do Glassdoor: 'Job Title', 'Company Name', 'Location', 'Salary Estimate'
-coluna_titulo = (
-    "Job Title" if "Job Title" in df_vagas.columns else df_vagas.columns[0]
-)
-coluna_empresa = (
-    "Company Name"
-    if "Company Name" in df_vagas.columns
-    else df_vagas.columns[1]
-)
-coluna_local = (
-    "Location" if "Location" in df_vagas.columns else df_vagas.columns[2]
-)
+# --- BARRA LATERAL SIMPLIFICADA ---
+st.sidebar.header("🔍 Filtros")
 
-termo_busca = st.sidebar.text_input(
-    "Filtrar por Palavra-Chave / Cargo", value=""
+termo_busca = st.sidebar.text_input("Cargo / Palavra-Chave", "")
+
+col_titulo = "Job Title" if "Job Title" in df_vagas.columns else df_vagas.columns[0]
+col_empresa = (
+    "Company Name" if "Company Name" in df_vagas.columns else df_vagas.columns[1]
+)
+col_local = "Location" if "Location" in df_vagas.columns else df_vagas.columns[2]
+col_desc = (
+    "Job Description"
+    if "Job Description" in df_vagas.columns
+    else df_vagas.columns[-1]
 )
 
-# Filtro por Empresa se a coluna existir
-if coluna_empresa in df_vagas.columns:
-  empresas_unicas = sorted(df_vagas[coluna_empresa].dropna().unique())
-  empresas_selecionadas = st.sidebar.multiselect(
-      "Filtrar por Empresa", options=empresas_unicas, default=[]
-  )
-else:
-  empresas_selecionadas = []
+skills_usuario = st.sidebar.multiselect(
+    "Stack Tecnológico",
+    ["Python", "SQL", "Pandas", "Machine Learning", "AWS", "Tableau"],
+    default=["Python", "SQL"],
+)
 
-st.sidebar.divider()
-alert_email = st.sidebar.checkbox("Ativar Notificações por E-mail", value=True)
 
-# --- FILTRAGEM DINÂMICA ---
+# --- FILTRAGEM E MATCH ---
 df_filtrado = df_vagas.copy()
 
-# Aplica filtro de texto no título do cargo
 if termo_busca:
   df_filtrado = df_filtrado[
-      df_filtrado[coluna_titulo]
+      df_filtrado[col_titulo]
       .astype(str)
       .str.contains(termo_busca, case=False, na=False)
   ]
 
-# Aplica filtro de empresas se selecionadas
-if empresas_selecionadas and coluna_empresa in df_vagas.columns:
-  df_filtrado = df_filtrado[
-      df_filtrado[coluna_empresa].isin(empresas_selecionadas)
-  ]
 
-# --- PAINEL PRINCIPAL (KPIs) ---
-col1, col2, col3, col4 = st.columns(4)
+def calcular_match(descricao, skills):
+  if not skills or pd.isna(descricao):
+    return 50
+  texto = str(descricao).lower()
+  encontradas = sum(1 for s in skills if s.lower() in texto)
+  return min(int(30 + (encontradas / len(skills)) * 69), 99)
 
-with col1:
-  st.metric(label="Total de Vagas Encontradas", value=len(df_filtrado))
-with col2:
-  total_empresas = (
-      df_filtrado[coluna_empresa].nunique()
-      if coluna_empresa in df_filtrado.columns
-      else 0
+
+if col_desc in df_filtrado.columns:
+  df_filtrado["Match (%)"] = df_filtrado[col_desc].apply(
+      lambda x: calcular_match(x, skills_usuario)
   )
-  st.metric(label="Empresas Distintas", value=total_empresas)
-with col3:
-  modalidade_freq = (
-      df_filtrado["Location"].mode()[0]
-      if "Location" in df_filtrado.columns and not df_filtrado.empty
+else:
+  df_filtrado["Match (%)"] = 75
+
+df_filtrado = df_filtrado.sort_values(by="Match (%)", ascending=False)
+
+
+# --- MÉTRICAS PRINCIPAIS (3 colunas para maior espaçamento) ---
+c1, c2, c3 = st.columns(3)
+
+with c1:
+  st.metric("Vagas Encontradas", len(df_filtrado))
+with c2:
+  st.metric(
+      "Alta Compatibilidade",
+      len(df_filtrado[df_filtrado["Match (%)"] >= 80]),
+  )
+with c3:
+  local_principal = (
+      str(df_filtrado[col_local].mode()[0]).split(",")[0]
+      if col_local in df_filtrado.columns and not df_filtrado.empty
       else "N/A"
   )
-  st.metric(label="Localização Mais Comum", value=str(modalidade_freq)[:20])
-with col4:
-  st.metric(
-      label="Status do Alerta",
-      value="Ativo 🟢" if alert_email else "Pausado 🔴",
-  )
+  st.metric("Localização Principal", local_principal)
 
-st.divider()
+st.markdown("---")
 
-# --- GRÁFICOS E ANÁLISE ---
+# --- CONTEÚDO PRINCIPAL ---
 col_left, col_right = st.columns([2, 1])
 
 with col_left:
-  st.subheader("📋 Lista de Vagas Filtradas")
+  st.subheader("📋 Lista de Oportunidades")
   if not df_filtrado.empty:
+    colunas = [c for c in [col_titulo, col_empresa, col_local, "Match (%)"] if c in df_filtrado.columns]
     st.dataframe(
-        df_filtrado.head(100), use_container_width=True, hide_index=True
+        df_filtrado[colunas].head(30), use_container_width=True, hide_index=True
+    )
+
+    csv_data = df_filtrado.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "📥 Descarregar Shortlist (CSV)",
+        data=csv_data,
+        file_name="vagas_filtradas.csv",
+        mime="text/csv",
     )
   else:
-    st.warning("Nenhuma vaga encontrada com os filtros selecionados.")
+    st.warning("Nenhuma vaga encontrada com os critérios definidos.")
 
 with col_right:
-  st.subheader("📊 Top Empresas com Vagas")
-  if not df_filtrado.empty and coluna_empresa in df_filtrado.columns:
-    top_empresas = df_filtrado[coluna_empresa].value_counts().reset_index()
-    top_empresas.columns = ["Empresa", "Quantidade"]
+  st.subheader("📊 Top Empresas")
+  if not df_filtrado.empty and col_empresa in df_filtrado.columns:
+    top_empresas = df_filtrado[col_empresa].value_counts().head(5).reset_index()
+    top_empresas.columns = ["Empresa", "Total"]
     fig = px.bar(
-        top_empresas.head(5),
-        x="Quantidade",
+        top_empresas,
+        x="Total",
         y="Empresa",
         orientation="h",
         template="plotly_dark",
-        title="Empresas com Mais Oportunidades",
+        height=280,
     )
-    fig.update_layout(yaxis={"categoryorder": "total ascending"})
+    fig.update_layout(
+        yaxis={"categoryorder": "total ascending"},
+        margin=dict(l=0, r=0, t=10, b=10),
+    )
     st.plotly_chart(fig, use_container_width=True)
   else:
-    st.info("Dados insuficientes para gerar o gráfico.")
-
-# --- AÇÃO / CADASTRO DE NOVO ALERTA ---
-st.divider()
-st.subheader("📩 Testar Envio de Alerta")
-
-with st.form("form_alerta"):
-  email_user = st.text_input(
-      "Introduza o seu e-mail para receber um resumo diário de vagas:"
-  )
-  frequencia = st.selectbox(
-      "Frequência do Alerta", ["Imediata", "Diária", "Semanal"]
-  )
-  submit = st.form_submit_button("Salvar Preferências de Alerta")
-
-  if submit:
-    if email_user:
-      st.success(
-          f"Alerta configurado com sucesso para {email_user}! Frequência:"
-          f" {frequencia}."
-      )
-    else:
-      st.error("Por favor, informe um e-mail válido.")
+    st.info("Sem dados suficientes.")
