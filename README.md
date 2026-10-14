@@ -32,6 +32,24 @@ O projeto foi construído utilizando o seguinte *stack* tecnológico:
 
 ---
 
+## 🛠️ Instalação e Execução
+
+### 1. Clonar o repositório
+```bash
+git clone 
+```
+
+### 2. Instalar as dependências essenciais
+```bash
+pip install streamlit pandas plotly
+```
+
+### 3. Executar a aplicação
+```bash
+streamlit run app.py
+```
+---
+
 ## 📂 Estrutura do Projeto
 
 ```text
