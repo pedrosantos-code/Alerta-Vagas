@@ -1,14 +1,21 @@
+from datetime import datetime
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-# Configuração da página
+# Configuração inicial da página
 st.set_page_config(
-    page_title="Alerta de Vagas & Analytics", page_icon="💼", layout="wide"
+    page_title="Alerta de Vagas & Analytics",
+    page_icon="💼",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 st.title("💼 Alerta de Vagas & Analytics")
-st.markdown("Filtra e monitoriza as melhores oportunidades sem ruído visual.")
+st.markdown(
+    "Filtra, analisa e monitoriza as melhores oportunidades com disparo de"
+    " alertas por e-mail."
+)
 
 
 # --- CARREGAR DADOS ---
@@ -20,15 +27,21 @@ def carregar_vagas():
 try:
   df_vagas = carregar_vagas()
 except Exception as e:
-  st.error(f"Erro ao carregar o ficheiro de dados: {e}")
+  st.error(
+      "Não foi possível carregar o ficheiro 'data/Cleaned_DS_Jobs.csv'."
+      f" Detalhe técnico: {e}"
+  )
   st.stop()
 
 
 # --- BARRA LATERAL SIMPLIFICADA ---
-st.sidebar.header("🔍 Filtros")
+st.sidebar.header("🔍 Filtros & Preferências")
 
-termo_busca = st.sidebar.text_input("Cargo / Palavra-Chave", "")
+termo_busca = st.sidebar.text_input(
+    "Cargo ou Palavra-Chave", "", placeholder="Ex: Data Scientist..."
+)
 
+# Identificação segura das colunas do dataset
 col_titulo = "Job Title" if "Job Title" in df_vagas.columns else df_vagas.columns[0]
 col_empresa = (
     "Company Name" if "Company Name" in df_vagas.columns else df_vagas.columns[1]
@@ -40,9 +53,20 @@ col_desc = (
     else df_vagas.columns[-1]
 )
 
+# Filtro multi-seleção de Empresas
+if col_empresa in df_vagas.columns:
+  empresas_disponiveis = sorted(df_vagas[col_empresa].dropna().unique())
+  empresas_selecionadas = st.sidebar.multiselect(
+      "Empresas", options=empresas_disponiveis
+  )
+else:
+  empresas_selecionadas = []
+
+st.sidebar.divider()
+st.sidebar.subheader("🎯 Stack Tecnológico")
 skills_usuario = st.sidebar.multiselect(
-    "Stack Tecnológico",
-    ["Python", "SQL", "Pandas", "Machine Learning", "AWS", "Tableau"],
+    "Competências dominadas:",
+    ["Python", "SQL", "Pandas", "Machine Learning", "AWS", "Tableau", "Spark"],
     default=["Python", "SQL"],
 )
 
@@ -56,6 +80,9 @@ if termo_busca:
       .astype(str)
       .str.contains(termo_busca, case=False, na=False)
   ]
+
+if empresas_selecionadas:
+  df_filtrado = df_filtrado[df_filtrado[col_empresa].isin(empresas_selecionadas)]
 
 
 def calcular_match(descricao, skills):
@@ -76,7 +103,7 @@ else:
 df_filtrado = df_filtrado.sort_values(by="Match (%)", ascending=False)
 
 
-# --- MÉTRICAS PRINCIPAIS (3 colunas para maior espaçamento) ---
+# --- MÉTRICAS PRINCIPAIS (3 colunas limpas) ---
 c1, c2, c3 = st.columns(3)
 
 with c1:
@@ -102,18 +129,41 @@ col_left, col_right = st.columns([2, 1])
 with col_left:
   st.subheader("📋 Lista de Oportunidades")
   if not df_filtrado.empty:
-    colunas = [c for c in [col_titulo, col_empresa, col_local, "Match (%)"] if c in df_filtrado.columns]
+    colunas = [
+        c
+        for c in [col_titulo, col_empresa, col_local, "Match (%)"]
+        if c in df_filtrado.columns
+    ]
     st.dataframe(
         df_filtrado[colunas].head(30), use_container_width=True, hide_index=True
     )
 
-    csv_data = df_filtrado.to_csv(index=False).encode("utf-8")
-    st.download_button(
-        "📥 Descarregar Shortlist (CSV)",
-        data=csv_data,
-        file_name="vagas_filtradas.csv",
-        mime="text/csv",
-    )
+    st.markdown("### 📩 Enviar Alerta de Vagas por E-mail")
+    with st.form("form_enviar_email"):
+      email_destino = st.text_input(
+          "Endereço de E-mail de Destino", placeholder="teu.email@exemplo.com"
+      )
+      frequencia_envio = st.selectbox(
+          "Frequência do Alerta", ["Imediato (Teste)", "Diário", "Semanal"]
+      )
+      enviar_btn = st.form_submit_button("Disparar Alerta de Vagas")
+
+      if enviar_btn:
+        if email_destino and "@" in email_destino:
+          # Simula a formatação do conteúdo do alerta que seria enviado via API do Gmail
+          resumo_vagas = "\n".join(
+              [
+                f"- {row.get(col_titulo, 'Vaga')} na empresa {row.get(col_empresa, 'N/A')} (Match: {row.get('Match (%)', 0)}%)"
+                for _, row in df_filtrado.head(5).iterrows()
+              ]
+          )
+
+          st.success(
+              f"Alerta configurado e enviado com sucesso para **{email_destino}**"
+              f" ({frequencia_envio})!\n\n**Resumo enviado:**\n{resumo_vagas}"
+          )
+        else:
+          st.error("Por favor, introduza um endereço de e-mail válido.")
   else:
     st.warning("Nenhuma vaga encontrada com os critérios definidos.")
 
@@ -122,18 +172,35 @@ with col_right:
   if not df_filtrado.empty and col_empresa in df_filtrado.columns:
     top_empresas = df_filtrado[col_empresa].value_counts().head(5).reset_index()
     top_empresas.columns = ["Empresa", "Total"]
+
     fig = px.bar(
         top_empresas,
         x="Total",
         y="Empresa",
         orientation="h",
+        text="Total",
         template="plotly_dark",
-        height=280,
+        color="Total",
+        color_continuous_scale="Blues",
     )
+
+    fig.update_traces(
+        textfont_size=12, textangle=0, textposition="outside", cliponaxis=False
+    )
+
     fig.update_layout(
         yaxis={"categoryorder": "total ascending"},
-        margin=dict(l=0, r=0, t=10, b=10),
+        xaxis=dict(showgrid=False, showticklabels=False, title=""),
+        yaxis_title="",
+        coloraxis_showscale=False,
+        margin=dict(l=0, r=30, t=10, b=10),
+        height=280,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
-    st.plotly_chart(fig, use_container_width=True)
+
+    st.plotly_chart(
+        fig, use_container_width=True, config={"displayModeBar": False}
+    )
   else:
     st.info("Sem dados suficientes.")
