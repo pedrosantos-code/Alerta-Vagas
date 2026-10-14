@@ -1,3 +1,5 @@
+## LINK DO SITE : https://alerta-vagas-hbqhmi8qgbawcg7h2we5qq.streamlit.app/
+
 # 💼 Job Alert & Analytics Dashboard
 
 Um painel web interativo, minimalista e focado em dados reais, desenvolvido em **Python** e **Streamlit**, desenhado para eliminar o ruído na procura de emprego e otimizar a monitorização de oportunidades de mercado.
