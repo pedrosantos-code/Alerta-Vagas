@@ -25,7 +25,7 @@ st.markdown(
             --muted: light-dark(#73819a, #91a1bb);
             --line: light-dark(rgba(80, 101, 137, 0.15), rgba(148, 174, 218, 0.14));
             --panel: light-dark(rgba(255, 255, 255, 0.92), rgba(15, 24, 43, 0.78));
-            --accent: light-dark(#7064d8, #a8a0ff);
+            --accent: light-dark(#7064d8, #6d55c7);
             --accent-strong: light-dark(#5f4ec4, #c0b5ff);
         }
 
@@ -205,7 +205,7 @@ st.markdown(
         .section-heading span {
             display: block;
             margin-bottom: 0.35rem;
-            color: var(--accent) !important;
+            color: var(--accent-strong) !important;
             font-size: 0.65rem;
             font-weight: 750;
             letter-spacing: 0.15em;

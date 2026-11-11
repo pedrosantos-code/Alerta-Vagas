@@ -9,7 +9,7 @@ secondaryBackgroundColor = "#ffffff"
 textColor = "#16233a"
 
 [theme.dark]
-primaryColor = "#a8a0ff"
+primaryColor = "#6d55c7"
 backgroundColor = "#080d18"
 secondaryBackgroundColor = "#0f182b"
 textColor = "#edf4ff"
