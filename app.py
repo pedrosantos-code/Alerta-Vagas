@@ -4,6 +4,7 @@ from html import escape
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -455,50 +456,55 @@ def enviar_alerta_email(destino, frequencia, vagas_top):
     return True, "Alerta enviado com sucesso por SMTP."
 
 
-def calcular_match(descricao, skills, linha=None):
-    if not skills:
-        return 50
+MAPA_COLUNAS_SKILLS = {
+    "python": ["python"],
+    "sql": ["sql"],
+    "pandas": ["pandas"],
+    "machine learning": ["machine_learning", "ml", "deep_learning"],
+    "aws": ["aws"],
+    "tableau": ["tableau"],
+    "spark": ["spark"],
+}
 
-    texto = str(descricao or "").lower()
-    peso_total = 0.0
+
+def calcular_match(descricoes, skills, vagas):
+    if not skills:
+        return pd.Series(50, index=vagas.index)
+
+    textos = descricoes.fillna("").astype(str).str.lower().tolist()
+    peso_total = np.zeros(len(vagas), dtype=float)
 
     for skill in skills:
         nome = str(skill).strip().lower()
-        score_skill = 0.0
+        score_skill = np.fromiter(
+            (nome in texto for texto in textos), dtype=float, count=len(textos)
+        ) * 0.7
 
-        if nome in texto:
-            score_skill += 0.7
+        for coluna in MAPA_COLUNAS_SKILLS.get(nome, []):
+            if coluna not in vagas.columns:
+                continue
 
-        if linha is not None:
-            mapa_colunas = {
-                "python": ["python"],
-                "sql": ["sql"],
-                "pandas": ["pandas"],
-                "machine learning": ["machine_learning", "ml", "deep_learning"],
-                "aws": ["aws"],
-                "tableau": ["tableau"],
-                "spark": ["spark"],
-            }
-            for coluna in mapa_colunas.get(nome, []):
-                valor = linha.get(coluna, 0)
-                if isinstance(valor, str):
-                    valor_normalizado = valor.strip().lower()
-                    if valor_normalizado in {"1", "true", "yes", "y"}:
-                        score_skill += 0.3
-                elif pd.notna(valor):
-                    try:
-                        if float(valor) > 0:
-                            score_skill += 0.3
-                    except (TypeError, ValueError):
-                        pass
+            valores = vagas[coluna]
+            if pd.api.types.is_numeric_dtype(valores):
+                score_skill += (
+                    valores.gt(0).fillna(False).to_numpy(dtype=bool) * 0.3
+                )
+            else:
+                for indice, valor in enumerate(valores):
+                    if isinstance(valor, str):
+                        if valor.strip().lower() in {"1", "true", "yes", "y"}:
+                            score_skill[indice] += 0.3
+                    elif pd.notna(valor):
+                        try:
+                            if float(valor) > 0:
+                                score_skill[indice] += 0.3
+                        except (TypeError, ValueError):
+                            pass
 
-        peso_total += min(score_skill, 1.0)
+        peso_total += np.minimum(score_skill, 1.0)
 
-    if not skills:
-        return 50
-
-    percentual = (peso_total / len(skills)) * 100
-    return min(int(percentual), 99)
+    percentuais = (peso_total / len(skills) * 100).astype(int)
+    return pd.Series(np.minimum(percentuais, 99), index=vagas.index)
 
 
 # --- BARRA LATERAL SIMPLIFICADA ---
@@ -661,9 +667,8 @@ if "avg_salary" in df_filtrado.columns:
     df_filtrado = df_filtrado[df_filtrado["avg_salary"] >= salario_minimo]
 
 if col_desc in df_filtrado.columns:
-    df_filtrado["Match (%)"] = df_filtrado.apply(
-        lambda row: calcular_match(row.get(col_desc, ""), skills_usuario, row),
-        axis=1,
+    df_filtrado["Match (%)"] = calcular_match(
+        df_filtrado[col_desc], skills_usuario, df_filtrado
     )
 else:
     df_filtrado["Match (%)"] = 75
