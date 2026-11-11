@@ -51,7 +51,10 @@ pip install -r requirements.txt
 python -m streamlit run app.py
 ```
 
-### 4. Configurar envio real de e-mail (opcional)
+### 4. Alternar entre Light e Dark
+Na versão publicada no Streamlit Cloud, abre o menu no canto superior direito e escolhe **Light** ou **Dark**. A aplicação acompanha o tema selecionado; o tema inicial é Light.
+
+### 5. Configurar envio real de e-mail (opcional)
 Se quiseres activar o envio real via SMTP, define estas variáveis de ambiente antes de iniciar a app:
 
 ```bash
@@ -68,7 +71,7 @@ set PORT=8501
 
 Se as variáveis não estiverem definidas, a app continua a funcionar em modo demo com vista previa do alerta no próprio dashboard.
 
-### 5. Deploy em produção
+### 6. Deploy em produção
 Para ambientes cloud ou containerizados, usa uma das opções abaixo:
 
 #### Opção A: Streamlit em servidor público

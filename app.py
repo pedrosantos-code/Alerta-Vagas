@@ -16,6 +16,75 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+tema_escuro = st.context.theme.get("base") == "dark"
+
+estilos_tema_escuro = """
+    .stApp {
+        background:
+            radial-gradient(ellipse at 82% 0%, rgba(86, 73, 177, 0.18), transparent 34rem),
+            radial-gradient(ellipse at 4% 18%, rgba(36, 166, 157, 0.10), transparent 28rem),
+            #080d18;
+        color: #edf4ff;
+    }
+
+    [data-testid="stHeader"] { background: rgba(8, 13, 24, 0.82); }
+    h1, h2, h3, p, label { color: #edf4ff; }
+    .hero {
+        border-color: rgba(151, 174, 225, 0.2);
+        background:
+            radial-gradient(ellipse at 90% 15%, rgba(130, 113, 255, 0.25), transparent 34%),
+            radial-gradient(ellipse at 68% 100%, rgba(77, 215, 195, 0.12), transparent 37%),
+            linear-gradient(120deg, rgba(20, 32, 54, 0.98), rgba(13, 20, 37, 0.94));
+        box-shadow: 0 26px 80px rgba(0, 0, 0, 0.24), inset 0 1px rgba(255,255,255,0.06);
+    }
+    .hero:after { border-color: rgba(102, 230, 209, 0.16); }
+    .hero-title { color: #f3f6ff; }
+    .hero-title span { background-image: linear-gradient(100deg, #72ead3 5%, #a8a0ff 88%); }
+    .hero-copy { color: #a9b7ce; }
+    .hero-status {
+        border-color: rgba(102, 230, 209, 0.22);
+        background: rgba(8, 20, 31, 0.52);
+        color: #b7c8da;
+    }
+    .hero-status i { background: #66e6d1; box-shadow: 0 0 12px #66e6d1; }
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3,
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] label,
+    [data-testid="stWidgetLabel"] p { color: #edf4ff !important; }
+    .metric-card {
+        background: linear-gradient(145deg, rgba(20, 31, 53, 0.88), rgba(13, 20, 35, 0.82));
+        box-shadow: inset 0 1px rgba(255,255,255,0.04);
+    }
+    .metric-value { color: #f4f7ff; }
+    .metric-foot { color: #91a1bb; }
+    .section-heading { color: #eaf0ff; }
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        background: rgba(15, 24, 43, 0.78) !important;
+        box-shadow: none;
+    }
+    [data-testid="stSidebar"] { background: rgba(10, 16, 29, 0.96); }
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p { color: #b1bfd4; }
+    input, textarea, [data-baseweb="select"] > div {
+        border-color: rgba(148, 174, 218, 0.2) !important;
+        background-color: rgba(11, 18, 32, 0.85) !important;
+        color: #edf4ff !important;
+    }
+    [data-baseweb="select"] * { color: #edf4ff !important; }
+    input::placeholder, textarea::placeholder { color: #91a1bb !important; opacity: 1; }
+    [data-baseweb="popover"], [role="listbox"] {
+        border-color: rgba(148, 174, 218, 0.2) !important;
+        background: #111a2b !important;
+        color: #edf4ff !important;
+    }
+    [data-testid="stDataFrame"] { filter: brightness(0.88) saturate(0.82); }
+    [data-testid="stPlotlyChart"] {
+        background: rgba(12, 19, 34, 0.5);
+        box-shadow: none;
+    }
+"""
+
 st.markdown(
     """
     <style>
@@ -38,14 +107,6 @@ st.markdown(
 
         [data-testid="stHeader"] {
             background: rgba(245, 247, 251, 0.82);
-        }
-
-        [data-testid="stMainMenu"] {
-            display: none !important;
-        }
-
-        #MainMenu {
-            visibility: hidden !important;
         }
 
         .block-container {
@@ -301,10 +362,17 @@ st.markdown(
                 margin-bottom: 0.65rem;
             }
         }
+
     </style>
     """,
     unsafe_allow_html=True,
 )
+
+if tema_escuro:
+    st.markdown(
+        f"<style>{estilos_tema_escuro}</style>",
+        unsafe_allow_html=True,
+    )
 
 st.markdown(
     """
@@ -721,14 +789,14 @@ with col_right:
             y="Empresa",
             orientation="h",
             text="Total",
-            template="plotly_white",
+            template="plotly_dark" if tema_escuro else "plotly_white",
             color="Total",
             color_continuous_scale="Blues",
         )
 
         fig.update_traces(
             textfont_size=12,
-            textfont_color="#263650",
+            textfont_color="#edf4ff" if tema_escuro else "#263650",
             textangle=0,
             textposition="outside",
             cliponaxis=False,
@@ -738,12 +806,12 @@ with col_right:
             yaxis={"categoryorder": "total ascending"},
             xaxis=dict(showgrid=False, showticklabels=False, title=""),
             yaxis_title="",
-            font=dict(color="#52617a"),
+            font=dict(color="#edf4ff" if tema_escuro else "#52617a"),
             coloraxis_showscale=False,
             margin=dict(l=0, r=30, t=10, b=10),
             height=280,
-            paper_bgcolor="rgba(255,255,255,0)",
-            plot_bgcolor="rgba(255,255,255,0)",
+            paper_bgcolor="rgba(0,0,0,0)" if tema_escuro else "rgba(255,255,255,0)",
+            plot_bgcolor="rgba(0,0,0,0)" if tema_escuro else "rgba(255,255,255,0)",
         )
 
         st.plotly_chart(
