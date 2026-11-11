@@ -204,6 +204,17 @@ st.markdown(
             text-transform: uppercase;
         }
 
+        .section-heading .accent-purple {
+            color: transparent;
+            background: linear-gradient(
+                100deg,
+                light-dark(#087f82, #66e6d1) 0%,
+                light-dark(#7064d8, #a8a0ff) 100%
+            );
+            background-clip: text;
+            -webkit-background-clip: text;
+        }
+
         [data-testid="stVerticalBlockBorderWrapper"] {
             border: 1px solid var(--line) !important;
             border-radius: 20px !important;
@@ -644,7 +655,7 @@ metricas = [
 ]
 
 st.markdown(
-    '<div class="section-heading"><span>Visão geral</span>Seu radar em números</div>',
+    '<div class="section-heading"><span class="accent-purple">Visão geral</span>Seu radar em números</div>',
     unsafe_allow_html=True,
 )
 metric_cols = st.columns(4)
@@ -730,6 +741,7 @@ with col_right:
         top_empresas = df_filtrado[col_empresa].value_counts().head(5).reset_index()
         top_empresas.columns = ["Empresa", "Total"]
 
+        paleta_empresas = ["#0f8f83", "#13a89a", "#3a9cba", "#657bd1", "#8773d3"]
         fig = px.bar(
             top_empresas,
             x="Total",
@@ -737,26 +749,38 @@ with col_right:
             orientation="h",
             text="Total",
             template="plotly_white",
-            color="Total",
-            color_continuous_scale="Blues",
         )
 
         fig.update_traces(
-            textfont_size=12,
+            marker=dict(
+                color=paleta_empresas[: len(top_empresas)],
+                cornerradius=8,
+                line=dict(width=0),
+            ),
+            textfont_size=13,
             textfont_color="#52617a",
             textangle=0,
             textposition="outside",
+            insidetextanchor="end",
             cliponaxis=False,
+            hovertemplate="<b>%{y}</b><br>%{x} vagas<extra></extra>",
         )
 
         fig.update_layout(
             yaxis={"categoryorder": "total ascending"},
-            xaxis=dict(showgrid=False, showticklabels=False, title=""),
+            xaxis=dict(
+                showgrid=False,
+                showticklabels=False,
+                showline=False,
+                zeroline=False,
+                title="",
+                range=[0, top_empresas["Total"].max() * 1.14],
+            ),
             yaxis_title="",
             font=dict(color="#52617a"),
-            coloraxis_showscale=False,
-            margin=dict(l=0, r=30, t=10, b=10),
-            height=280,
+            bargap=0.36,
+            margin=dict(l=8, r=36, t=16, b=12),
+            height=320,
             paper_bgcolor="rgba(255,255,255,0)",
             plot_bgcolor="rgba(255,255,255,0)",
         )
