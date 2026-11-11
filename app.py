@@ -99,12 +99,15 @@ st.markdown(
             text-transform: uppercase;
         }
 
+        .hero-eyebrow {
+            color: light-dark(#8a78ec, #c0b5ff);
+        }
+
         .hero-title {
             position: relative;
             z-index: 1;
             max-width: 760px;
             margin: 0.8rem 0 0.7rem;
-            color: var(--ink);
             font-size: clamp(2.2rem, 5vw, 4.25rem);
             font-weight: 780;
             letter-spacing: -0.065em;
@@ -113,7 +116,11 @@ st.markdown(
 
         .hero-title span {
             color: transparent;
-            background: linear-gradient(100deg, var(--cyan) 5%, light-dark(#7064d8, #a8a0ff) 88%);
+            background: linear-gradient(
+                105deg,
+                light-dark(#6847c7, #a99aff) 0%,
+                light-dark(#9675f5, #d0bfff) 100%
+            );
             background-clip: text;
             -webkit-background-clip: text;
         }
@@ -145,8 +152,8 @@ st.markdown(
             width: 0.45rem;
             height: 0.45rem;
             border-radius: 50%;
-            background: var(--cyan);
-            box-shadow: 0 0 12px color-mix(in srgb, var(--cyan) 50%, transparent);
+            background: light-dark(#8b5cf6, #bc8cff);
+            box-shadow: 0 0 14px light-dark(rgba(139, 92, 246, 0.9), rgba(188, 140, 255, 0.95));
         }
 
         .metric-card {
@@ -197,22 +204,11 @@ st.markdown(
         .section-heading span {
             display: block;
             margin-bottom: 0.35rem;
-            color: var(--cyan);
+            color: light-dark(#7064d8, #a8a0ff) !important;
             font-size: 0.65rem;
             font-weight: 750;
             letter-spacing: 0.15em;
             text-transform: uppercase;
-        }
-
-        .section-heading .accent-purple {
-            color: transparent;
-            background: linear-gradient(
-                100deg,
-                light-dark(#087f82, #66e6d1) 0%,
-                light-dark(#7064d8, #a8a0ff) 100%
-            );
-            background-clip: text;
-            -webkit-background-clip: text;
         }
 
         [data-testid="stVerticalBlockBorderWrapper"] {
@@ -224,7 +220,9 @@ st.markdown(
 
         [data-testid="stSidebar"] {
             border-right: 1px solid var(--line);
-            background: light-dark(rgba(250, 251, 254, 0.96), rgba(10, 16, 29, 0.96));
+            background:
+                radial-gradient(ellipse at 0% 0%, light-dark(rgba(112, 100, 216, 0.08), rgba(168, 160, 255, 0.08)), transparent 28rem),
+                light-dark(#f1effa, #111322);
         }
 
         [data-testid="stSidebar"] > div:first-child {
@@ -336,7 +334,7 @@ st.markdown(
     """
     <section class="hero">
         <div class="hero-eyebrow">Inteligência de carreira · 2026</div>
-        <h1 class="hero-title">A próxima oportunidade<br><span>começa com clareza.</span></h1>
+        <h1 class="hero-title"><span>A próxima oportunidade</span><br><span>começa com clareza.</span></h1>
         <p class="hero-copy">Explore o mercado, encontre vagas alinhadas ao seu perfil e transforme a busca em uma decisão estratégica.</p>
         <div class="hero-status"><i></i> Radar de oportunidades ativo</div>
     </section>
@@ -655,7 +653,7 @@ metricas = [
 ]
 
 st.markdown(
-    '<div class="section-heading"><span class="accent-purple">Visão geral</span>Seu radar em números</div>',
+    '<div class="section-heading"><span>Visão geral</span>Seu radar em números</div>',
     unsafe_allow_html=True,
 )
 metric_cols = st.columns(4)

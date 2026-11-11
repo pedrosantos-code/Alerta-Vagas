@@ -3,13 +3,13 @@ base = "light"
 font = "sans serif"
 
 [theme.light]
-primaryColor = "#087f82"
+primaryColor = "#7064d8"
 backgroundColor = "#f5f7fb"
 secondaryBackgroundColor = "#ffffff"
 textColor = "#16233a"
 
 [theme.dark]
-primaryColor = "#66e6d1"
+primaryColor = "#a8a0ff"
 backgroundColor = "#080d18"
 secondaryBackgroundColor = "#0f182b"
 textColor = "#edf4ff"
