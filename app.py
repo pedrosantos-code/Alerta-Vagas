@@ -238,11 +238,20 @@ st.markdown(
             color: var(--muted);
         }
 
-        input, textarea, [data-baseweb="select"] > div {
+        input:not([type="range"]):not([role="combobox"]), textarea, [data-baseweb="select"] > div {
             border-color: var(--line) !important;
             border-radius: 12px !important;
             background-color: light-dark(#ffffff, rgba(11, 18, 32, 0.85)) !important;
             color: var(--ink) !important;
+        }
+
+        [data-testid="stMultiSelect"] [data-rac][role="group"],
+        [data-testid="stSelectbox"] [data-rac][role="group"] {
+            box-sizing: border-box;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background-color: light-dark(#ffffff, rgba(11, 18, 32, 0.85));
+            color: var(--ink);
         }
 
         [data-testid="stMultiSelect"] input[role="combobox"],
@@ -253,7 +262,17 @@ st.markdown(
             box-shadow: none !important;
         }
 
-        input:focus, textarea:focus, [data-baseweb="select"]:focus-within {
+        input[type="range"] {
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
+        input:not([type="range"]):not([role="combobox"]):focus,
+        textarea:focus,
+        [data-testid="stMultiSelect"]:focus-within [data-rac][role="group"],
+        [data-testid="stSelectbox"]:focus-within [data-rac][role="group"] {
             border-color: var(--accent) !important;
             box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent) !important;
         }
