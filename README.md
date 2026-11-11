@@ -38,17 +38,53 @@ O projeto foi construído utilizando o seguinte *stack* tecnológico:
 
 ### 1. Clonar o repositório
 ```bash
-git clone 
+git clone https://github.com/pedrosantos-code/Alerta-Vagas.git
 ```
 
 ### 2. Instalar as dependências essenciais
 ```bash
-pip install streamlit pandas plotly
+pip install -r requirements.txt
 ```
 
 ### 3. Executar a aplicação
 ```bash
-streamlit run app.py
+python -m streamlit run app.py
+```
+
+### 4. Configurar envio real de e-mail (opcional)
+Se quiseres activar o envio real via SMTP, define estas variáveis de ambiente antes de iniciar a app:
+
+```bash
+set DATA_PATH=data/Cleaned_DS_Jobs.csv
+set SMTP_HOST=smtp.gmail.com
+set SMTP_PORT=587
+set SMTP_USER=teu-email@gmail.com
+set SMTP_PASSWORD=sua-password-de-app
+set SMTP_TLS=true
+set PORT=8501
+```
+
+> Em Gmail, normalmente é necessário criar uma senha de app e ativar SMTP.
+
+Se as variáveis não estiverem definidas, a app continua a funcionar em modo demo com vista previa do alerta no próprio dashboard.
+
+### 5. Deploy em produção
+Para ambientes cloud ou containerizados, usa uma das opções abaixo:
+
+#### Opção A: Streamlit em servidor público
+```bash
+python -m streamlit run app.py --server.address 0.0.0.0 --server.port 8501 --server.headless true
+```
+
+#### Opção B: Docker
+```bash
+docker build -t alerta-vagas .
+docker run -p 8501:8501 --env-file .env alerta-vagas
+```
+
+#### Opção C: Script de arranque
+```bash
+bash start.sh
 ```
 ---
 

@@ -1,4 +1,9 @@
+import os
+import smtplib
 from datetime import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -86,17 +91,121 @@ st.markdown(
 # --- CARREGAR DADOS ---
 @st.cache_data
 def carregar_vagas():
-  return pd.read_csv("data/Cleaned_DS_Jobs.csv")
+    data_path = os.getenv("DATA_PATH", "data/Cleaned_DS_Jobs.csv")
+    if not os.path.exists(data_path):
+        raise FileNotFoundError(
+            f"Ficheiro de dados não encontrado em '{data_path}'. "
+            "Certifica-te de que a variável DATA_PATH aponta para o CSV correto."
+        )
+    return pd.read_csv(data_path)
 
 
 try:
-  df_vagas = carregar_vagas()
+    df_vagas = carregar_vagas()
 except Exception as e:
-  st.error(
-      "Não foi possível carregar o ficheiro 'data/Cleaned_DS_Jobs.csv'."
-      f" Detalhe técnico: {e}"
-  )
-  st.stop()
+    st.error(
+        "Não foi possível carregar o ficheiro 'data/Cleaned_DS_Jobs.csv'."
+        f" Detalhe técnico: {e}"
+    )
+    st.stop()
+
+
+def obter_valor_numero(valor):
+    if pd.isna(valor):
+        return 0
+    try:
+        return float(str(valor).replace("$", "").replace(",", "").strip())
+    except ValueError:
+        return 0
+
+
+def enviar_alerta_email(destino, frequencia, vagas_top):
+    smtp_host = os.getenv("SMTP_HOST")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    use_tls = os.getenv("SMTP_TLS", "true").lower() in {"1", "true", "yes", "y"}
+
+    if not smtp_host or not smtp_user or not smtp_password:
+        return False, "SMTP não configurado. O alerta foi apenas simulado no dashboard."
+
+    assunto = f"Alerta de Vagas - {frequencia}"
+    corpo = "\n".join(
+        [
+            "Olá,",
+            "",
+            "Aqui vai o resumo das vagas mais alinhadas ao teu perfil:",
+            "",
+            *[
+                f"- {linha['Job Title']} na empresa {linha.get('Company Name', 'N/A')} "
+                f"(Match: {linha.get('Match (%)', 0)}%, salário médio: ${linha.get('avg_salary', 0)}k)"
+                for _, linha in vagas_top.head(5).iterrows()
+            ],
+            "",
+            "Atenciosamente,",
+            "Alerta de Vagas & Analytics",
+        ]
+    )
+
+    mensagem = MIMEMultipart()
+    mensagem["From"] = smtp_user
+    mensagem["To"] = destino
+    mensagem["Subject"] = assunto
+    mensagem.attach(MIMEText(corpo, "plain", "utf-8"))
+
+    with smtplib.SMTP(smtp_host, smtp_port) as servidor:
+        if use_tls:
+            servidor.starttls()
+        servidor.login(smtp_user, smtp_password)
+        servidor.send_message(mensagem)
+
+    return True, "Alerta enviado com sucesso por SMTP."
+
+
+def calcular_match(descricao, skills, linha=None):
+    if not skills:
+        return 50
+
+    texto = str(descricao or "").lower()
+    peso_total = 0.0
+
+    for skill in skills:
+        nome = str(skill).strip().lower()
+        score_skill = 0.0
+
+        if nome in texto:
+            score_skill += 0.7
+
+        if linha is not None:
+            mapa_colunas = {
+                "python": ["python"],
+                "sql": ["sql"],
+                "pandas": ["pandas"],
+                "machine learning": ["machine_learning", "ml", "deep_learning"],
+                "aws": ["aws"],
+                "tableau": ["tableau"],
+                "spark": ["spark"],
+            }
+            for coluna in mapa_colunas.get(nome, []):
+                valor = linha.get(coluna, 0)
+                if isinstance(valor, str):
+                    valor_normalizado = valor.strip().lower()
+                    if valor_normalizado in {"1", "true", "yes", "y"}:
+                        score_skill += 0.3
+                elif pd.notna(valor):
+                    try:
+                        if float(valor) > 0:
+                            score_skill += 0.3
+                    except (TypeError, ValueError):
+                        pass
+
+        peso_total += min(score_skill, 1.0)
+
+    if not skills:
+        return 50
+
+    percentual = (peso_total / len(skills)) * 100
+    return min(int(percentual), 99)
 
 
 # --- BARRA LATERAL SIMPLIFICADA ---
@@ -123,30 +232,30 @@ col_estado = "job_state" if "job_state" in df_vagas.columns else None
 
 # Filtro multi-seleção de Empresas
 if col_empresa in df_vagas.columns:
-  empresas_disponiveis = sorted(df_vagas[col_empresa].dropna().unique())
-  empresas_selecionadas = st.sidebar.multiselect(
-      "Empresas", options=empresas_disponiveis, key="empresas"
-  )
+    empresas_disponiveis = sorted(df_vagas[col_empresa].dropna().unique())
+    empresas_selecionadas = st.sidebar.multiselect(
+        "Empresas", options=empresas_disponiveis, key="empresas"
+    )
 else:
-  empresas_selecionadas = []
+    empresas_selecionadas = []
 
 if col_estado in df_vagas.columns:
-  locais_disponiveis = sorted(
-      df_vagas[col_estado].dropna().astype(str).str.strip().str.upper().unique()
-  )
+    locais_disponiveis = sorted(
+        df_vagas[col_estado].dropna().astype(str).str.strip().str.upper().unique()
+    )
 elif col_local in df_vagas.columns:
-  locais_disponiveis = sorted(
-      df_vagas[col_local]
-      .dropna()
-      .astype(str)
-      .str.split(",")
-      .str[-1]
-      .str.strip()
-      .str.upper()
-      .unique()
-  )
+    locais_disponiveis = sorted(
+        df_vagas[col_local]
+        .dropna()
+        .astype(str)
+        .str.split(",")
+        .str[-1]
+        .str.strip()
+        .str.upper()
+        .unique()
+    )
 else:
-  locais_disponiveis = []
+    locais_disponiveis = []
 
 local_selecionado = st.sidebar.multiselect(
     "Localização (estado ou cidade)",
@@ -155,22 +264,34 @@ local_selecionado = st.sidebar.multiselect(
 )
 
 if "seniority" in df_vagas.columns:
-  senioridades = sorted(
-      {
-          str(v).strip().lower()
-          for v in df_vagas["seniority"].dropna().astype(str).unique()
-          if str(v).strip().lower() != "na"
-      }
-  )
-  senioridade_disponivel = ["Todos"] + senioridades
-  senioridade_selecionada = st.sidebar.selectbox(
-      "Nível de experiência",
-      senioridade_disponivel,
-      index=0,
-      key="senioridade",
-  )
+    senioridades = sorted(
+        {
+            str(v).strip().lower()
+            for v in df_vagas["seniority"].dropna().astype(str).unique()
+            if str(v).strip().lower() != "na"
+        }
+    )
+    senioridade_disponivel = ["Todos"] + senioridades
+    senioridade_selecionada = st.sidebar.selectbox(
+        "Nível de experiência",
+        senioridade_disponivel,
+        index=0,
+        key="senioridade",
+    )
 else:
-  senioridade_selecionada = "Todos"
+    senioridade_selecionada = "Todos"
+
+if "avg_salary" in df_vagas.columns:
+    salario_minimo = st.sidebar.slider(
+        "Salário mínimo (k USD/ano)",
+        min_value=40,
+        max_value=300,
+        value=40,
+        step=10,
+        key="salario_minimo",
+    )
+else:
+    salario_minimo = 0
 
 st.sidebar.divider()
 st.sidebar.subheader("🎯 Stack Tecnológico")
@@ -181,71 +302,81 @@ skills_usuario = st.sidebar.multiselect(
     key="skills_usuario",
 )
 
+match_minimo = st.sidebar.slider(
+    "Match mínimo (%)",
+    min_value=0,
+    max_value=100,
+    value=40,
+    step=5,
+    key="match_minimo",
+)
+
 if st.sidebar.button("Limpar filtros", use_container_width=True):
-  for key in [
-      "termo_busca",
-      "empresas",
-      "localizacao",
-      "senioridade",
-      "skills_usuario",
-  ]:
-    st.session_state.pop(key, None)
-  st.rerun()
+    for key in [
+        "termo_busca",
+        "empresas",
+        "localizacao",
+        "senioridade",
+        "skills_usuario",
+        "salario_minimo",
+        "match_minimo",
+    ]:
+        st.session_state.pop(key, None)
+    st.rerun()
 
 
 # --- FILTRAGEM E MATCH ---
 df_filtrado = df_vagas.copy()
 
 if termo_busca:
-  df_filtrado = df_filtrado[
-      df_filtrado[col_titulo]
-      .astype(str)
-      .str.contains(termo_busca, case=False, na=False)
-  ]
+    df_filtrado = df_filtrado[
+        df_filtrado[col_titulo]
+        .astype(str)
+        .str.contains(termo_busca, case=False, na=False)
+    ]
 
 if empresas_selecionadas:
-  df_filtrado = df_filtrado[df_filtrado[col_empresa].isin(empresas_selecionadas)]
+    df_filtrado = df_filtrado[df_filtrado[col_empresa].isin(empresas_selecionadas)]
 
 if local_selecionado:
-  if col_estado in df_filtrado.columns:
-    df_filtrado = df_filtrado[
-        df_filtrado[col_estado].fillna("").astype(str).str.strip().str.upper().isin(
-            {valor.upper() for valor in local_selecionado}
-        )
-    ]
-  elif col_local in df_filtrado.columns:
-    df_filtrado = df_filtrado[
-        df_filtrado[col_local]
-        .fillna("")
-        .astype(str)
-        .str.split(",")
-        .str[-1]
-        .str.strip()
-        .str.upper()
-        .isin({valor.upper() for valor in local_selecionado})
-    ]
+    if col_estado in df_filtrado.columns:
+        df_filtrado = df_filtrado[
+            df_filtrado[col_estado].fillna("").astype(str).str.strip().str.upper().isin(
+                {valor.upper() for valor in local_selecionado}
+            )
+        ]
+    elif col_local in df_filtrado.columns:
+        df_filtrado = df_filtrado[
+            df_filtrado[col_local]
+            .fillna("")
+            .astype(str)
+            .str.split(",")
+            .str[-1]
+            .str.strip()
+            .str.upper()
+            .isin({valor.upper() for valor in local_selecionado})
+        ]
 
 if senioridade_selecionada != "Todos" and "seniority" in df_filtrado.columns:
-  df_filtrado = df_filtrado[
-      df_filtrado["seniority"].fillna("na").astype(str).str.lower()
-      == senioridade_selecionada.lower()
-  ]
+    df_filtrado = df_filtrado[
+        df_filtrado["seniority"].fillna("na").astype(str).str.lower()
+        == senioridade_selecionada.lower()
+    ]
 
-
-def calcular_match(descricao, skills):
-  if not skills or pd.isna(descricao):
-    return 50
-  texto = str(descricao).lower()
-  encontradas = sum(1 for s in skills if s.lower() in texto)
-  return min(int(30 + (encontradas / len(skills)) * 69), 99)
-
+if "avg_salary" in df_filtrado.columns:
+    df_filtrado["avg_salary"] = df_filtrado["avg_salary"].apply(obter_valor_numero)
+    df_filtrado = df_filtrado[df_filtrado["avg_salary"] >= salario_minimo]
 
 if col_desc in df_filtrado.columns:
-  df_filtrado["Match (%)"] = df_filtrado[col_desc].apply(
-      lambda x: calcular_match(x, skills_usuario)
-  )
+    df_filtrado["Match (%)"] = df_filtrado.apply(
+        lambda row: calcular_match(row.get(col_desc, ""), skills_usuario, row),
+        axis=1,
+    )
 else:
-  df_filtrado["Match (%)"] = 75
+    df_filtrado["Match (%)"] = 75
+
+if not df_filtrado.empty:
+    df_filtrado = df_filtrado[df_filtrado["Match (%)"] >= match_minimo]
 
 df_filtrado = df_filtrado.sort_values(by="Match (%)", ascending=False)
 
@@ -254,17 +385,17 @@ df_filtrado = df_filtrado.sort_values(by="Match (%)", ascending=False)
 c1, c2, c3 = st.columns(3)
 
 with c1:
-  st.metric("Vagas Encontradas", len(df_filtrado))
+    st.metric("Vagas Encontradas", len(df_filtrado))
 with c2:
-  match_medio = round(df_filtrado["Match (%)"].mean(), 1) if not df_filtrado.empty else 0
-  st.metric("Match Médio", f"{match_medio}%")
+    match_medio = round(df_filtrado["Match (%)"].mean(), 1) if not df_filtrado.empty else 0
+    st.metric("Match Médio", f"{match_medio}%")
 with c3:
-  local_principal = (
-      str(df_filtrado[col_local].mode()[0]).split(",")[0]
-      if col_local in df_filtrado.columns and not df_filtrado.empty
-      else "N/A"
-  )
-  st.metric("Localização Principal", local_principal)
+    local_principal = (
+        str(df_filtrado[col_local].mode()[0]).split(",")[0]
+        if col_local in df_filtrado.columns and not df_filtrado.empty
+        else "N/A"
+    )
+    st.metric("Localização Principal", local_principal)
 
 st.markdown("---")
 
@@ -272,80 +403,87 @@ st.markdown("---")
 col_left, col_right = st.columns([2, 1])
 
 with col_left:
-  st.subheader("📋 Lista de Oportunidades")
-  if not df_filtrado.empty:
-    colunas = [
-        c
-        for c in [col_titulo, col_empresa, col_local, "Match (%)"]
-        if c in df_filtrado.columns
-    ]
-    st.dataframe(
-        df_filtrado[colunas].head(30), use_container_width=True, hide_index=True
-    )
+    st.subheader("📋 Lista de Oportunidades")
+    if not df_filtrado.empty:
+        colunas = [
+            c
+            for c in [col_titulo, col_empresa, col_local, "Match (%)"]
+            if c in df_filtrado.columns
+        ]
+        st.dataframe(
+            df_filtrado[colunas].head(30), use_container_width=True, hide_index=True
+        )
 
-    st.markdown("### 📩 Enviar Alerta de Vagas por E-mail")
-    with st.form("form_enviar_email"):
-      email_destino = st.text_input(
-          "Endereço de E-mail de Destino", placeholder="teu.email@exemplo.com"
-      )
-      frequencia_envio = st.selectbox(
-          "Frequência do Alerta", ["Imediato (Teste)", "Diário", "Semanal"]
-      )
-      enviar_btn = st.form_submit_button("Disparar Alerta de Vagas")
+        st.markdown("### 📩 Enviar Alerta de Vagas por E-mail")
+        with st.form("form_enviar_email"):
+            email_destino = st.text_input(
+                "Endereço de E-mail de Destino", placeholder="teu.email@exemplo.com"
+            )
+            frequencia_envio = st.selectbox(
+                "Frequência do Alerta", ["Imediato (Teste)", "Diário", "Semanal"]
+            )
+            enviar_btn = st.form_submit_button("Disparar Alerta de Vagas")
 
-      if enviar_btn:
-        if email_destino and "@" in email_destino:
-          # Simula a formatação do conteúdo do alerta que seria enviado via API do Gmail
-          resumo_vagas = "\n".join(
-              [
-                f"- {row.get(col_titulo, 'Vaga')} na empresa {row.get(col_empresa, 'N/A')} (Match: {row.get('Match (%)', 0)}%)"
-                for _, row in df_filtrado.head(5).iterrows()
-              ]
-          )
+            if enviar_btn:
+                if email_destino and "@" in email_destino:
+                    resumo_vagas = "\n".join(
+                        [
+                            f"- {row.get(col_titulo, 'Vaga')} na empresa {row.get(col_empresa, 'N/A')} (Match: {row.get('Match (%)', 0)}%)"
+                            for _, row in df_filtrado.head(5).iterrows()
+                        ]
+                    )
 
-          st.success(
-              f"Alerta configurado e enviado com sucesso para **{email_destino}**"
-              f" ({frequencia_envio})!\n\n**Resumo enviado:**\n{resumo_vagas}"
-          )
-        else:
-          st.error("Por favor, introduza um endereço de e-mail válido.")
-  else:
-    st.warning("Nenhuma vaga encontrada com os critérios definidos.")
+                    sucesso, mensagem = enviar_alerta_email(
+                        email_destino, frequencia_envio, df_filtrado.head(5)
+                    )
+
+                    if sucesso:
+                        st.success(
+                            f"{mensagem}\n\n**Resumo enviado:**\n{resumo_vagas}"
+                        )
+                    else:
+                        st.warning(
+                            f"{mensagem}\n\n**Resumo do preview:**\n{resumo_vagas}"
+                        )
+                else:
+                    st.error("Por favor, introduza um endereço de e-mail válido.")
+    else:
+        st.warning("Nenhuma vaga encontrada com os critérios definidos.")
 
 with col_right:
-  st.subheader("📊 Top Empresas")
-  if not df_filtrado.empty and col_empresa in df_filtrado.columns:
-    top_empresas = df_filtrado[col_empresa].value_counts().head(5).reset_index()
-    top_empresas.columns = ["Empresa", "Total"]
+    st.subheader("📊 Top Empresas")
+    if not df_filtrado.empty and col_empresa in df_filtrado.columns:
+        top_empresas = df_filtrado[col_empresa].value_counts().head(5).reset_index()
+        top_empresas.columns = ["Empresa", "Total"]
 
-    fig = px.bar(
-        top_empresas,
-        x="Total",
-        y="Empresa",
-        orientation="h",
-        text="Total",
-        template="plotly_dark",
-        color="Total",
-        color_continuous_scale="Blues",
-    )
+        fig = px.bar(
+            top_empresas,
+            x="Total",
+            y="Empresa",
+            orientation="h",
+            text="Total",
+            template="plotly_dark",
+            color="Total",
+            color_continuous_scale="Blues",
+        )
 
-    fig.update_traces(
-        textfont_size=12, textangle=0, textposition="outside", cliponaxis=False
-    )
+        fig.update_traces(
+            textfont_size=12, textangle=0, textposition="outside", cliponaxis=False
+        )
 
-    fig.update_layout(
-        yaxis={"categoryorder": "total ascending"},
-        xaxis=dict(showgrid=False, showticklabels=False, title=""),
-        yaxis_title="",
-        coloraxis_showscale=False,
-        margin=dict(l=0, r=30, t=10, b=10),
-        height=280,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-    )
+        fig.update_layout(
+            yaxis={"categoryorder": "total ascending"},
+            xaxis=dict(showgrid=False, showticklabels=False, title=""),
+            yaxis_title="",
+            coloraxis_showscale=False,
+            margin=dict(l=0, r=30, t=10, b=10),
+            height=280,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+        )
 
-    st.plotly_chart(
-        fig, use_container_width=True, config={"displayModeBar": False}
-    )
-  else:
-    st.info("Sem dados suficientes.")
+        st.plotly_chart(
+            fig, use_container_width=True, config={"displayModeBar": False}
+        )
+    else:
+        st.info("Sem dados suficientes.")
