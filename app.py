@@ -1,6 +1,6 @@
 import os
 import smtplib
-from datetime import datetime
+from html import escape
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -20,28 +20,245 @@ st.markdown(
     """
     <style>
         :root {
-            --page-padding: clamp(0.75rem, 2vw, 1.5rem);
-            --card-padding: clamp(0.75rem, 2vw, 1.25rem);
+            --page-padding: clamp(1rem, 3vw, 3rem);
+            --ink: #16233a;
+            --muted: #73819a;
+            --line: rgba(80, 101, 137, 0.15);
+            --panel: rgba(255, 255, 255, 0.92);
+            --cyan: #087f82;
+        }
+
+        .stApp {
+            background:
+                radial-gradient(ellipse at 88% 0%, rgba(123, 108, 232, 0.09), transparent 35rem),
+                radial-gradient(ellipse at 0% 14%, rgba(33, 184, 164, 0.08), transparent 30rem),
+                #f5f7fb;
+            color: var(--ink);
+        }
+
+        [data-testid="stHeader"] {
+            background: rgba(245, 247, 251, 0.82);
+        }
+
+        [data-testid="stMainMenu"] {
+            display: none !important;
+        }
+
+        #MainMenu {
+            visibility: hidden !important;
         }
 
         .block-container {
-            padding-top: 1rem !important;
+            padding-top: 1.6rem !important;
             padding-left: var(--page-padding) !important;
             padding-right: var(--page-padding) !important;
-            max-width: 100% !important;
+            max-width: 1480px !important;
         }
 
-        div[data-testid="stMetricContainer"] {
-            min-width: 0;
+        h1, h2, h3, p, label {
+            color: var(--ink);
         }
 
-        div[data-testid="stMetricValue"] {
-            font-size: clamp(1.1rem, 2vw, 1.8rem) !important;
-            white-space: normal !important;
+        h1, h2, h3 {
+            letter-spacing: -0.035em;
         }
 
-        div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"] {
-            padding: 0.5rem 0.1rem !important;
+        .hero {
+            position: relative;
+            overflow: hidden;
+            padding: clamp(1.5rem, 4vw, 3.25rem);
+            margin: 0.6rem 0 1.6rem;
+            border: 1px solid rgba(99, 121, 165, 0.16);
+            border-radius: 28px;
+            background:
+                radial-gradient(ellipse at 90% 12%, rgba(140, 123, 247, 0.18), transparent 34%),
+                radial-gradient(ellipse at 68% 100%, rgba(70, 207, 183, 0.12), transparent 37%),
+                linear-gradient(120deg, #ffffff 0%, #f5f8ff 55%, #f2f7fb 100%);
+            box-shadow: 0 24px 70px rgba(44, 60, 94, 0.09), inset 0 1px rgba(255,255,255,0.9);
+        }
+
+        .hero:after {
+            content: "";
+            position: absolute;
+            right: -5rem;
+            top: -9rem;
+            width: 25rem;
+            height: 25rem;
+            border: 1px solid rgba(8, 127, 130, 0.14);
+            border-radius: 50%;
+            box-shadow: 0 0 0 2.5rem rgba(8, 127, 130, 0.025), 0 0 0 5rem rgba(126, 111, 226, 0.025);
+            pointer-events: none;
+        }
+
+        .hero-eyebrow, .section-kicker {
+            color: var(--cyan);
+            font-size: 0.72rem;
+            font-weight: 750;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        .hero-title {
+            position: relative;
+            z-index: 1;
+            max-width: 760px;
+            margin: 0.8rem 0 0.7rem;
+            color: #17243b;
+            font-size: clamp(2.2rem, 5vw, 4.25rem);
+            font-weight: 780;
+            letter-spacing: -0.065em;
+            line-height: 1.04;
+        }
+
+        .hero-title span {
+            color: transparent;
+            background: linear-gradient(100deg, #087f82 5%, #7064d8 88%);
+            background-clip: text;
+            -webkit-background-clip: text;
+        }
+
+        .hero-copy {
+            max-width: 650px;
+            margin: 0;
+            color: #64728a;
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
+        .hero-status {
+            position: absolute;
+            right: 2rem;
+            bottom: 1.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            padding: 0.6rem 0.85rem;
+            border: 1px solid rgba(8, 127, 130, 0.16);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.78);
+            color: #53647d;
+            font-size: 0.75rem;
+        }
+
+        .hero-status i {
+            width: 0.45rem;
+            height: 0.45rem;
+            border-radius: 50%;
+            background: #16a394;
+            box-shadow: 0 0 12px rgba(22, 163, 148, 0.5);
+        }
+
+        .metric-card {
+            min-height: 132px;
+            padding: 1.15rem 1.3rem;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: linear-gradient(145deg, #ffffff, #fbfcff);
+            box-shadow: 0 12px 30px rgba(38, 55, 87, 0.045), inset 0 1px #ffffff;
+        }
+
+        .metric-label {
+            margin-bottom: 0.75rem;
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-weight: 650;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            color: #17243b;
+            font-size: clamp(1.55rem, 2.8vw, 2.2rem);
+            font-weight: 760;
+            letter-spacing: -0.06em;
+            line-height: 1.1;
+            overflow-wrap: anywhere;
+        }
+
+        .metric-foot {
+            margin-top: 0.55rem;
+            color: #8a97aa;
+            font-size: 0.76rem;
+        }
+
+        .section-heading {
+            margin: 1.8rem 0 0.95rem;
+            color: #19263d;
+            font-size: 1.25rem;
+            font-weight: 720;
+            letter-spacing: -0.035em;
+        }
+
+        .section-heading span {
+            display: block;
+            margin-bottom: 0.35rem;
+            color: var(--cyan);
+            font-size: 0.65rem;
+            font-weight: 750;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        [data-testid="stVerticalBlockBorderWrapper"] {
+            border: 1px solid var(--line) !important;
+            border-radius: 20px !important;
+            background: var(--panel) !important;
+            box-shadow: 0 12px 34px rgba(38, 55, 87, 0.045);
+        }
+
+        [data-testid="stSidebar"] {
+            border-right: 1px solid var(--line);
+            background: rgba(250, 251, 254, 0.96);
+        }
+
+        [data-testid="stSidebar"] > div:first-child {
+            background: transparent;
+        }
+
+        [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+            letter-spacing: -0.035em;
+        }
+
+        [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+            color: #52617a;
+        }
+
+        input, textarea, [data-baseweb="select"] > div {
+            border-color: rgba(80, 101, 137, 0.2) !important;
+            border-radius: 12px !important;
+            background-color: #ffffff !important;
+        }
+
+        button[kind="primary"], [data-testid="stFormSubmitButton"] button {
+            border: 1px solid rgba(8, 127, 130, 0.28) !important;
+            border-radius: 12px !important;
+            background: linear-gradient(110deg, #6bd7c5, #9a8cf0) !important;
+            color: #10233a !important;
+            font-weight: 750 !important;
+            transition: transform 160ms ease, filter 160ms ease;
+        }
+
+        button[kind="primary"]:hover, [data-testid="stFormSubmitButton"] button:hover {
+            filter: brightness(1.08);
+            transform: translateY(-1px);
+        }
+
+        [data-testid="stDataFrame"] {
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+        }
+
+        [data-testid="stPlotlyChart"] {
+            padding: 0.35rem;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 12px 34px rgba(38, 55, 87, 0.045);
+        }
+
+        hr {
+            border-color: var(--line) !important;
         }
 
         .stDataFrame {
@@ -50,21 +267,20 @@ st.markdown(
 
         @media (max-width: 768px) {
             .block-container {
-                padding-top: 0.5rem !important;
-                padding-left: 0.5rem !important;
-                padding-right: 0.5rem !important;
+                padding-top: 1rem !important;
+                padding-left: 0.8rem !important;
+                padding-right: 0.8rem !important;
             }
 
-            h1 {
-                font-size: clamp(1.7rem, 5vw, 2.4rem) !important;
+            .hero {
+                padding: 1.5rem;
+                border-radius: 22px;
             }
 
-            h2, h3 {
-                font-size: clamp(1.1rem, 4vw, 1.6rem) !important;
-            }
-
-            [data-testid="stSidebar"] {
-                width: min(100vw, 18rem) !important;
+            .hero-status {
+                position: static;
+                width: fit-content;
+                margin-top: 1.2rem;
             }
 
             div[data-testid="stHorizontalBlock"] {
@@ -75,16 +291,31 @@ st.markdown(
                 width: 100% !important;
                 max-width: 100% !important;
             }
+
+            div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+                margin-bottom: 0.9rem !important;
+            }
+
+            .metric-card {
+                min-height: 0;
+                margin-bottom: 0.65rem;
+            }
         }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-st.title("💼 Alerta de Vagas & Analytics")
 st.markdown(
-    "Filtra, analisa e monitoriza as melhores oportunidades com disparo de"
-    " alertas por e-mail."
+    """
+    <section class="hero">
+        <div class="hero-eyebrow">Inteligência de carreira · 2026</div>
+        <h1 class="hero-title">A próxima oportunidade<br><span>começa com clareza.</span></h1>
+        <p class="hero-copy">Explore o mercado, encontre vagas alinhadas ao seu perfil e transforme a busca em uma decisão estratégica.</p>
+        <div class="hero-status"><i></i> Radar de oportunidades ativo</div>
+    </section>
+    """,
+    unsafe_allow_html=True,
 )
 
 
@@ -381,40 +612,65 @@ if not df_filtrado.empty:
 df_filtrado = df_filtrado.sort_values(by="Match (%)", ascending=False)
 
 
-# --- MÉTRICAS PRINCIPAIS (3 colunas limpas) ---
-c1, c2, c3 = st.columns(3)
+# --- MÉTRICAS PRINCIPAIS ---
+match_medio = round(df_filtrado["Match (%)"].mean(), 1) if not df_filtrado.empty else 0
+local_principal = (
+    str(df_filtrado[col_local].mode()[0]).split(",")[0]
+    if col_local in df_filtrado.columns and not df_filtrado.empty
+    else "N/A"
+)
+vagas_match_alto = int((df_filtrado["Match (%)"] >= 80).sum())
 
-with c1:
-    st.metric("Vagas Encontradas", len(df_filtrado))
-with c2:
-    match_medio = round(df_filtrado["Match (%)"].mean(), 1) if not df_filtrado.empty else 0
-    st.metric("Match Médio", f"{match_medio}%")
-with c3:
-    local_principal = (
-        str(df_filtrado[col_local].mode()[0]).split(",")[0]
-        if col_local in df_filtrado.columns and not df_filtrado.empty
-        else "N/A"
-    )
-    st.metric("Localização Principal", local_principal)
+metricas = [
+    ("Oportunidades", f"{len(df_filtrado):,}".replace(",", "."), "Vagas dentro dos filtros"),
+    ("Match médio", f"{match_medio}%", "Aderência média ao seu stack"),
+    ("Alta compatibilidade", f"{vagas_match_alto}", "Vagas com match igual ou acima de 80%"),
+    ("Local em destaque", escape(local_principal), "Localização mais frequente"),
+]
 
-st.markdown("---")
+st.markdown(
+    '<div class="section-heading"><span>Visão geral</span>Seu radar em números</div>',
+    unsafe_allow_html=True,
+)
+metric_cols = st.columns(4)
+for coluna, (rotulo, valor, detalhe) in zip(metric_cols, metricas):
+    with coluna:
+        st.markdown(
+            f"""
+            <div class="metric-card">
+                <div class="metric-label">{rotulo}</div>
+                <div class="metric-value">{valor}</div>
+                <div class="metric-foot">{detalhe}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 # --- CONTEÚDO PRINCIPAL ---
 col_left, col_right = st.columns([2, 1])
 
 with col_left:
-    st.subheader("📋 Lista de Oportunidades")
+    st.markdown(
+        '<div class="section-heading"><span>Seleção personalizada</span>Oportunidades em destaque</div>',
+        unsafe_allow_html=True,
+    )
     if not df_filtrado.empty:
         colunas = [
             c
-            for c in [col_titulo, col_empresa, col_local, "Match (%)"]
+            for c in [col_titulo, col_empresa, col_local, "avg_salary", "Match (%)"]
             if c in df_filtrado.columns
         ]
+        tabela_vagas = df_filtrado[colunas].head(30).rename(
+            columns={"avg_salary": "Salário médio (k USD)"}
+        )
         st.dataframe(
-            df_filtrado[colunas].head(30), use_container_width=True, hide_index=True
+            tabela_vagas, use_container_width=True, hide_index=True
         )
 
-        st.markdown("### 📩 Enviar Alerta de Vagas por E-mail")
+        st.markdown(
+            '<div class="section-heading"><span>Fique à frente</span>Receba sua shortlist por e-mail</div>',
+            unsafe_allow_html=True,
+        )
         with st.form("form_enviar_email"):
             email_destino = st.text_input(
                 "Endereço de E-mail de Destino", placeholder="teu.email@exemplo.com"
@@ -451,7 +707,10 @@ with col_left:
         st.warning("Nenhuma vaga encontrada com os critérios definidos.")
 
 with col_right:
-    st.subheader("📊 Top Empresas")
+    st.markdown(
+        '<div class="section-heading"><span>Quem está contratando</span>Empresas em alta</div>',
+        unsafe_allow_html=True,
+    )
     if not df_filtrado.empty and col_empresa in df_filtrado.columns:
         top_empresas = df_filtrado[col_empresa].value_counts().head(5).reset_index()
         top_empresas.columns = ["Empresa", "Total"]
@@ -462,24 +721,29 @@ with col_right:
             y="Empresa",
             orientation="h",
             text="Total",
-            template="plotly_dark",
+            template="plotly_white",
             color="Total",
             color_continuous_scale="Blues",
         )
 
         fig.update_traces(
-            textfont_size=12, textangle=0, textposition="outside", cliponaxis=False
+            textfont_size=12,
+            textfont_color="#263650",
+            textangle=0,
+            textposition="outside",
+            cliponaxis=False,
         )
 
         fig.update_layout(
             yaxis={"categoryorder": "total ascending"},
             xaxis=dict(showgrid=False, showticklabels=False, title=""),
             yaxis_title="",
+            font=dict(color="#52617a"),
             coloraxis_showscale=False,
             margin=dict(l=0, r=30, t=10, b=10),
             height=280,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(255,255,255,0)",
+            plot_bgcolor="rgba(255,255,255,0)",
         )
 
         st.plotly_chart(
