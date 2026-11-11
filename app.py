@@ -245,6 +245,14 @@ st.markdown(
             color: var(--ink) !important;
         }
 
+        [data-testid="stMultiSelect"] input[role="combobox"],
+        [data-testid="stSelectbox"] input[role="combobox"] {
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
         input:focus, textarea:focus, [data-baseweb="select"]:focus-within {
             border-color: var(--accent) !important;
             box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent) !important;
