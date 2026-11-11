@@ -16,97 +16,32 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-tema_escuro = st.context.theme.get("base") == "dark"
-
-estilos_tema_escuro = """
-    .stApp {
-        background:
-            radial-gradient(ellipse at 82% 0%, rgba(86, 73, 177, 0.18), transparent 34rem),
-            radial-gradient(ellipse at 4% 18%, rgba(36, 166, 157, 0.10), transparent 28rem),
-            #080d18;
-        color: #edf4ff;
-    }
-
-    [data-testid="stHeader"] { background: rgba(8, 13, 24, 0.82); }
-    h1, h2, h3, p, label { color: #edf4ff; }
-    .hero {
-        border-color: rgba(151, 174, 225, 0.2);
-        background:
-            radial-gradient(ellipse at 90% 15%, rgba(130, 113, 255, 0.25), transparent 34%),
-            radial-gradient(ellipse at 68% 100%, rgba(77, 215, 195, 0.12), transparent 37%),
-            linear-gradient(120deg, rgba(20, 32, 54, 0.98), rgba(13, 20, 37, 0.94));
-        box-shadow: 0 26px 80px rgba(0, 0, 0, 0.24), inset 0 1px rgba(255,255,255,0.06);
-    }
-    .hero:after { border-color: rgba(102, 230, 209, 0.16); }
-    .hero-title { color: #f3f6ff; }
-    .hero-title span { background-image: linear-gradient(100deg, #72ead3 5%, #a8a0ff 88%); }
-    .hero-copy { color: #a9b7ce; }
-    .hero-status {
-        border-color: rgba(102, 230, 209, 0.22);
-        background: rgba(8, 20, 31, 0.52);
-        color: #b7c8da;
-    }
-    .hero-status i { background: #66e6d1; box-shadow: 0 0 12px #66e6d1; }
-    [data-testid="stSidebar"] h1,
-    [data-testid="stSidebar"] h2,
-    [data-testid="stSidebar"] h3,
-    [data-testid="stSidebar"] p,
-    [data-testid="stSidebar"] label,
-    [data-testid="stWidgetLabel"] p { color: #edf4ff !important; }
-    .metric-card {
-        background: linear-gradient(145deg, rgba(20, 31, 53, 0.88), rgba(13, 20, 35, 0.82));
-        box-shadow: inset 0 1px rgba(255,255,255,0.04);
-    }
-    .metric-value { color: #f4f7ff; }
-    .metric-foot { color: #91a1bb; }
-    .section-heading { color: #eaf0ff; }
-    [data-testid="stVerticalBlockBorderWrapper"] {
-        background: rgba(15, 24, 43, 0.78) !important;
-        box-shadow: none;
-    }
-    [data-testid="stSidebar"] { background: rgba(10, 16, 29, 0.96); }
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p { color: #b1bfd4; }
-    input, textarea, [data-baseweb="select"] > div {
-        border-color: rgba(148, 174, 218, 0.2) !important;
-        background-color: rgba(11, 18, 32, 0.85) !important;
-        color: #edf4ff !important;
-    }
-    [data-baseweb="select"] * { color: #edf4ff !important; }
-    input::placeholder, textarea::placeholder { color: #91a1bb !important; opacity: 1; }
-    [data-baseweb="popover"], [role="listbox"] {
-        border-color: rgba(148, 174, 218, 0.2) !important;
-        background: #111a2b !important;
-        color: #edf4ff !important;
-    }
-    [data-testid="stDataFrame"] { filter: brightness(0.88) saturate(0.82); }
-    [data-testid="stPlotlyChart"] {
-        background: rgba(12, 19, 34, 0.5);
-        box-shadow: none;
-    }
-"""
-
 st.markdown(
     """
     <style>
         :root {
             --page-padding: clamp(1rem, 3vw, 3rem);
-            --ink: #16233a;
-            --muted: #73819a;
-            --line: rgba(80, 101, 137, 0.15);
-            --panel: rgba(255, 255, 255, 0.92);
-            --cyan: #087f82;
+            --ink: light-dark(#16233a, #edf4ff);
+            --muted: light-dark(#73819a, #91a1bb);
+            --line: light-dark(rgba(80, 101, 137, 0.15), rgba(148, 174, 218, 0.14));
+            --panel: light-dark(rgba(255, 255, 255, 0.92), rgba(15, 24, 43, 0.78));
+            --cyan: light-dark(#087f82, #66e6d1);
         }
 
         .stApp {
             background:
                 radial-gradient(ellipse at 88% 0%, rgba(123, 108, 232, 0.09), transparent 35rem),
                 radial-gradient(ellipse at 0% 14%, rgba(33, 184, 164, 0.08), transparent 30rem),
-                #f5f7fb;
+                light-dark(#f5f7fb, #080d18);
             color: var(--ink);
         }
 
         [data-testid="stHeader"] {
-            background: rgba(245, 247, 251, 0.82);
+            background: light-dark(rgba(245, 247, 251, 0.82), rgba(8, 13, 24, 0.82));
+        }
+
+        [data-testid="stMainMenuItem-theme-System"] {
+            display: none !important;
         }
 
         .block-container {
@@ -129,12 +64,17 @@ st.markdown(
             overflow: hidden;
             padding: clamp(1.5rem, 4vw, 3.25rem);
             margin: 0.6rem 0 1.6rem;
-            border: 1px solid rgba(99, 121, 165, 0.16);
+            border: 1px solid light-dark(rgba(99, 121, 165, 0.16), rgba(151, 174, 225, 0.2));
             border-radius: 28px;
             background:
                 radial-gradient(ellipse at 90% 12%, rgba(140, 123, 247, 0.18), transparent 34%),
                 radial-gradient(ellipse at 68% 100%, rgba(70, 207, 183, 0.12), transparent 37%),
-                linear-gradient(120deg, #ffffff 0%, #f5f8ff 55%, #f2f7fb 100%);
+                linear-gradient(
+                    120deg,
+                    light-dark(#ffffff, #142036) 0%,
+                    light-dark(#f5f8ff, #0d1425) 55%,
+                    light-dark(#f2f7fb, #0d1425) 100%
+                );
             box-shadow: 0 24px 70px rgba(44, 60, 94, 0.09), inset 0 1px rgba(255,255,255,0.9);
         }
 
@@ -145,9 +85,9 @@ st.markdown(
             top: -9rem;
             width: 25rem;
             height: 25rem;
-            border: 1px solid rgba(8, 127, 130, 0.14);
+            border: 1px solid color-mix(in srgb, var(--cyan) 14%, transparent);
             border-radius: 50%;
-            box-shadow: 0 0 0 2.5rem rgba(8, 127, 130, 0.025), 0 0 0 5rem rgba(126, 111, 226, 0.025);
+            box-shadow: 0 0 0 2.5rem color-mix(in srgb, var(--cyan) 2.5%, transparent), 0 0 0 5rem rgba(126, 111, 226, 0.025);
             pointer-events: none;
         }
 
@@ -164,7 +104,7 @@ st.markdown(
             z-index: 1;
             max-width: 760px;
             margin: 0.8rem 0 0.7rem;
-            color: #17243b;
+            color: var(--ink);
             font-size: clamp(2.2rem, 5vw, 4.25rem);
             font-weight: 780;
             letter-spacing: -0.065em;
@@ -173,7 +113,7 @@ st.markdown(
 
         .hero-title span {
             color: transparent;
-            background: linear-gradient(100deg, #087f82 5%, #7064d8 88%);
+            background: linear-gradient(100deg, var(--cyan) 5%, light-dark(#7064d8, #a8a0ff) 88%);
             background-clip: text;
             -webkit-background-clip: text;
         }
@@ -181,7 +121,7 @@ st.markdown(
         .hero-copy {
             max-width: 650px;
             margin: 0;
-            color: #64728a;
+            color: var(--muted);
             font-size: 1rem;
             line-height: 1.7;
         }
@@ -194,10 +134,10 @@ st.markdown(
             align-items: center;
             gap: 0.55rem;
             padding: 0.6rem 0.85rem;
-            border: 1px solid rgba(8, 127, 130, 0.16);
+            border: 1px solid color-mix(in srgb, var(--cyan) 16%, transparent);
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.78);
-            color: #53647d;
+            background: light-dark(rgba(255, 255, 255, 0.78), rgba(8, 20, 31, 0.52));
+            color: light-dark(#53647d, #b7c8da);
             font-size: 0.75rem;
         }
 
@@ -205,8 +145,8 @@ st.markdown(
             width: 0.45rem;
             height: 0.45rem;
             border-radius: 50%;
-            background: #16a394;
-            box-shadow: 0 0 12px rgba(22, 163, 148, 0.5);
+            background: var(--cyan);
+            box-shadow: 0 0 12px color-mix(in srgb, var(--cyan) 50%, transparent);
         }
 
         .metric-card {
@@ -214,8 +154,12 @@ st.markdown(
             padding: 1.15rem 1.3rem;
             border: 1px solid var(--line);
             border-radius: 20px;
-            background: linear-gradient(145deg, #ffffff, #fbfcff);
-            box-shadow: 0 12px 30px rgba(38, 55, 87, 0.045), inset 0 1px #ffffff;
+            background: linear-gradient(
+                145deg,
+                light-dark(#ffffff, rgba(20, 31, 53, 0.88)),
+                light-dark(#fbfcff, rgba(13, 20, 35, 0.82))
+            );
+            box-shadow: 0 12px 30px rgba(38, 55, 87, 0.045), inset 0 1px light-dark(#ffffff, rgba(255,255,255,0.04));
         }
 
         .metric-label {
@@ -228,7 +172,7 @@ st.markdown(
         }
 
         .metric-value {
-            color: #17243b;
+            color: var(--ink);
             font-size: clamp(1.55rem, 2.8vw, 2.2rem);
             font-weight: 760;
             letter-spacing: -0.06em;
@@ -238,13 +182,13 @@ st.markdown(
 
         .metric-foot {
             margin-top: 0.55rem;
-            color: #8a97aa;
+            color: var(--muted);
             font-size: 0.76rem;
         }
 
         .section-heading {
             margin: 1.8rem 0 0.95rem;
-            color: #19263d;
+            color: var(--ink);
             font-size: 1.25rem;
             font-weight: 720;
             letter-spacing: -0.035em;
@@ -269,7 +213,7 @@ st.markdown(
 
         [data-testid="stSidebar"] {
             border-right: 1px solid var(--line);
-            background: rgba(250, 251, 254, 0.96);
+            background: light-dark(rgba(250, 251, 254, 0.96), rgba(10, 16, 29, 0.96));
         }
 
         [data-testid="stSidebar"] > div:first-child {
@@ -281,19 +225,24 @@ st.markdown(
         }
 
         [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
-            color: #52617a;
+            color: var(--muted);
         }
 
         input, textarea, [data-baseweb="select"] > div {
-            border-color: rgba(80, 101, 137, 0.2) !important;
+            border-color: var(--line) !important;
             border-radius: 12px !important;
-            background-color: #ffffff !important;
+            background-color: light-dark(#ffffff, rgba(11, 18, 32, 0.85)) !important;
+            color: var(--ink) !important;
         }
 
         button[kind="primary"], [data-testid="stFormSubmitButton"] button {
-            border: 1px solid rgba(8, 127, 130, 0.28) !important;
+            border: 1px solid color-mix(in srgb, var(--cyan) 28%, transparent) !important;
             border-radius: 12px !important;
-            background: linear-gradient(110deg, #6bd7c5, #9a8cf0) !important;
+            background: linear-gradient(
+                110deg,
+                light-dark(#6bd7c5, #4bd3be),
+                light-dark(#9a8cf0, #8b83f5)
+            ) !important;
             color: #10233a !important;
             font-weight: 750 !important;
             transition: transform 160ms ease, filter 160ms ease;
@@ -314,8 +263,12 @@ st.markdown(
             padding: 0.35rem;
             border: 1px solid var(--line);
             border-radius: 18px;
-            background: rgba(255, 255, 255, 0.8);
+            background: light-dark(rgba(255, 255, 255, 0.8), rgba(12, 19, 34, 0.5));
             box-shadow: 0 12px 34px rgba(38, 55, 87, 0.045);
+        }
+
+        [data-testid="stPlotlyChart"] svg text {
+            fill: light-dark(#52617a, #edf4ff) !important;
         }
 
         hr {
@@ -367,12 +320,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
-if tema_escuro:
-    st.markdown(
-        f"<style>{estilos_tema_escuro}</style>",
-        unsafe_allow_html=True,
-    )
 
 st.markdown(
     """
@@ -789,14 +736,14 @@ with col_right:
             y="Empresa",
             orientation="h",
             text="Total",
-            template="plotly_dark" if tema_escuro else "plotly_white",
+            template="plotly_white",
             color="Total",
             color_continuous_scale="Blues",
         )
 
         fig.update_traces(
             textfont_size=12,
-            textfont_color="#edf4ff" if tema_escuro else "#263650",
+            textfont_color="#52617a",
             textangle=0,
             textposition="outside",
             cliponaxis=False,
@@ -806,12 +753,12 @@ with col_right:
             yaxis={"categoryorder": "total ascending"},
             xaxis=dict(showgrid=False, showticklabels=False, title=""),
             yaxis_title="",
-            font=dict(color="#edf4ff" if tema_escuro else "#52617a"),
+            font=dict(color="#52617a"),
             coloraxis_showscale=False,
             margin=dict(l=0, r=30, t=10, b=10),
             height=280,
-            paper_bgcolor="rgba(0,0,0,0)" if tema_escuro else "rgba(255,255,255,0)",
-            plot_bgcolor="rgba(0,0,0,0)" if tema_escuro else "rgba(255,255,255,0)",
+            paper_bgcolor="rgba(255,255,255,0)",
+            plot_bgcolor="rgba(255,255,255,0)",
         )
 
         st.plotly_chart(

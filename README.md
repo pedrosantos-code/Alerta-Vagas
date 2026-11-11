@@ -52,7 +52,7 @@ python -m streamlit run app.py
 ```
 
 ### 4. Alternar entre Light e Dark
-Na versão publicada no Streamlit Cloud, abre o menu no canto superior direito e escolhe **Light** ou **Dark**. A aplicação acompanha o tema selecionado; o tema inicial é Light.
+No menu nativo do Streamlit, no canto superior direito, escolhe **Light** ou **Dark**. Os dois temas estão configurados em `.streamlit/config.toml`; a aplicação acompanha a seleção e inicia em Light. A opção **System** fica oculta para manter apenas os dois modos pedidos.
 
 ### 5. Configurar envio real de e-mail (opcional)
 Se quiseres activar o envio real via SMTP, define estas variáveis de ambiente antes de iniciar a app:
