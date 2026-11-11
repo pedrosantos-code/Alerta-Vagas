@@ -25,13 +25,14 @@ st.markdown(
             --muted: light-dark(#73819a, #91a1bb);
             --line: light-dark(rgba(80, 101, 137, 0.15), rgba(148, 174, 218, 0.14));
             --panel: light-dark(rgba(255, 255, 255, 0.92), rgba(15, 24, 43, 0.78));
-            --cyan: light-dark(#087f82, #66e6d1);
+            --accent: light-dark(#7064d8, #a8a0ff);
+            --accent-strong: light-dark(#5f4ec4, #c0b5ff);
         }
 
         .stApp {
             background:
                 radial-gradient(ellipse at 88% 0%, rgba(123, 108, 232, 0.09), transparent 35rem),
-                radial-gradient(ellipse at 0% 14%, rgba(33, 184, 164, 0.08), transparent 30rem),
+                radial-gradient(ellipse at 0% 14%, rgba(112, 100, 216, 0.07), transparent 30rem),
                 light-dark(#f5f7fb, #080d18);
             color: var(--ink);
         }
@@ -64,11 +65,11 @@ st.markdown(
             overflow: hidden;
             padding: clamp(1.5rem, 4vw, 3.25rem);
             margin: 0.6rem 0 1.6rem;
-            border: 1px solid light-dark(rgba(99, 121, 165, 0.16), rgba(151, 174, 225, 0.2));
+            border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
             border-radius: 28px;
             background:
                 radial-gradient(ellipse at 90% 12%, rgba(140, 123, 247, 0.18), transparent 34%),
-                radial-gradient(ellipse at 68% 100%, rgba(70, 207, 183, 0.12), transparent 37%),
+                radial-gradient(ellipse at 68% 100%, rgba(137, 116, 224, 0.1), transparent 37%),
                 linear-gradient(
                     120deg,
                     light-dark(#ffffff, #142036) 0%,
@@ -85,14 +86,14 @@ st.markdown(
             top: -9rem;
             width: 25rem;
             height: 25rem;
-            border: 1px solid color-mix(in srgb, var(--cyan) 14%, transparent);
+            border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
             border-radius: 50%;
-            box-shadow: 0 0 0 2.5rem color-mix(in srgb, var(--cyan) 2.5%, transparent), 0 0 0 5rem rgba(126, 111, 226, 0.025);
+            box-shadow: 0 0 0 2.5rem color-mix(in srgb, var(--accent) 4%, transparent), 0 0 0 5rem rgba(126, 111, 226, 0.035);
             pointer-events: none;
         }
 
         .hero-eyebrow, .section-kicker {
-            color: var(--cyan);
+            color: var(--accent);
             font-size: 0.72rem;
             font-weight: 750;
             letter-spacing: 0.16em;
@@ -100,7 +101,7 @@ st.markdown(
         }
 
         .hero-eyebrow {
-            color: light-dark(#8a78ec, #c0b5ff);
+            color: var(--accent-strong);
         }
 
         .hero-title {
@@ -141,7 +142,7 @@ st.markdown(
             align-items: center;
             gap: 0.55rem;
             padding: 0.6rem 0.85rem;
-            border: 1px solid color-mix(in srgb, var(--cyan) 16%, transparent);
+            border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
             border-radius: 999px;
             background: light-dark(rgba(255, 255, 255, 0.78), rgba(8, 20, 31, 0.52));
             color: light-dark(#53647d, #b7c8da);
@@ -204,7 +205,7 @@ st.markdown(
         .section-heading span {
             display: block;
             margin-bottom: 0.35rem;
-            color: light-dark(#7064d8, #a8a0ff) !important;
+            color: var(--accent) !important;
             font-size: 0.65rem;
             font-weight: 750;
             letter-spacing: 0.15em;
@@ -221,7 +222,7 @@ st.markdown(
         [data-testid="stSidebar"] {
             border-right: 1px solid var(--line);
             background:
-                radial-gradient(ellipse at 0% 0%, light-dark(rgba(112, 100, 216, 0.08), rgba(168, 160, 255, 0.08)), transparent 28rem),
+                radial-gradient(ellipse at 0% 0%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 28rem),
                 light-dark(#f1effa, #111322);
         }
 
@@ -244,15 +245,20 @@ st.markdown(
             color: var(--ink) !important;
         }
 
+        input:focus, textarea:focus, [data-baseweb="select"]:focus-within {
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent) !important;
+        }
+
         button[kind="primary"], [data-testid="stFormSubmitButton"] button {
-            border: 1px solid color-mix(in srgb, var(--cyan) 28%, transparent) !important;
+            border: 1px solid color-mix(in srgb, var(--accent) 48%, transparent) !important;
             border-radius: 12px !important;
             background: linear-gradient(
                 110deg,
-                light-dark(#6bd7c5, #4bd3be),
-                light-dark(#9a8cf0, #8b83f5)
+                #684bc8,
+                #8065dd
             ) !important;
-            color: #10233a !important;
+            color: #ffffff !important;
             font-weight: 750 !important;
             transition: transform 160ms ease, filter 160ms ease;
         }
@@ -282,6 +288,11 @@ st.markdown(
 
         hr {
             border-color: var(--line) !important;
+        }
+
+        [data-testid="stSidebar"] button:not([kind="primary"]):hover {
+            border-color: color-mix(in srgb, var(--accent) 55%, transparent) !important;
+            color: var(--accent-strong) !important;
         }
 
         .stDataFrame {
@@ -739,7 +750,7 @@ with col_right:
         top_empresas = df_filtrado[col_empresa].value_counts().head(5).reset_index()
         top_empresas.columns = ["Empresa", "Total"]
 
-        paleta_empresas = ["#0f8f83", "#13a89a", "#3a9cba", "#657bd1", "#8773d3"]
+        paleta_empresas = ["#7154cf", "#8b62d5", "#a16ad2", "#795edb", "#b37ad6"]
         fig = px.bar(
             top_empresas,
             x="Total",
@@ -756,7 +767,7 @@ with col_right:
                 line=dict(width=0),
             ),
             textfont_size=13,
-            textfont_color="#52617a",
+            textfont_color="#6d628f",
             textangle=0,
             textposition="outside",
             insidetextanchor="end",
@@ -775,7 +786,7 @@ with col_right:
                 range=[0, top_empresas["Total"].max() * 1.14],
             ),
             yaxis_title="",
-            font=dict(color="#52617a"),
+            font=dict(color="#6d628f"),
             bargap=0.36,
             margin=dict(l=8, r=36, t=16, b=12),
             height=320,
